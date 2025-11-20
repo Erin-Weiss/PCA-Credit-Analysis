@@ -28,8 +28,6 @@ My goals are to:
 
 ```{r warning=FALSE, output=FALSE}
 library(tidyverse)
-library(factoextra)
-library(cluster)
 ```
 
 ## Read and Examine the Data
@@ -166,8 +164,6 @@ Below is a consolidated version of the core R code used in this analysis.
 ```{r}
 # Load Libraries
 library(tidyverse)
-library(factoextra)
-library(cluster)
 
 # Read Data
 Credit <- read.csv("CreditShort.csv")

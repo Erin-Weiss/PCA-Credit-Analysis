@@ -44,8 +44,6 @@ Key steps included:
 - **Language:** R  
 - **Libraries:**  
   - `tidyverse`  
-  - `factoextra`  
-  - `cluster`  
 - **Reporting:** Quarto (`.qmd`) → HTML
 
 ---
