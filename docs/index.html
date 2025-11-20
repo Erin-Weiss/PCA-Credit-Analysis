@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.7.32">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Erin Weiss">
+
+<title>Credit Applicant Analysis Using Principal Component Analysis (PCA)</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="credit_pca_case_study_files/libs/clipboard/clipboard.min.js"></script>
+<script src="credit_pca_case_study_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="credit_pca_case_study_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="credit_pca_case_study_files/libs/quarto-html/popper.min.js"></script>
+<script src="credit_pca_case_study_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="credit_pca_case_study_files/libs/quarto-html/anchor.min.js"></script>
+<link href="credit_pca_case_study_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="credit_pca_case_study_files/libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="credit_pca_case_study_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="credit_pca_case_study_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="credit_pca_case_study_files/libs/bootstrap/bootstrap-81267100e462c21b3d6c0d5bf76a3417.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="credit_pca_case_study_files/libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet">
+<script src="credit_pca_case_study_files/libs/pagedtable-1.1/js/pagedtable.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">1</span> Introduction</a></li>
+  <li><a href="#setup" id="toc-setup" class="nav-link" data-scroll-target="#setup"><span class="header-section-number">2</span> Setup</a>
+  <ul class="collapse">
+  <li><a href="#load-libraries" id="toc-load-libraries" class="nav-link" data-scroll-target="#load-libraries"><span class="header-section-number">2.1</span> Load Libraries</a></li>
+  <li><a href="#read-and-examine-the-data" id="toc-read-and-examine-the-data" class="nav-link" data-scroll-target="#read-and-examine-the-data"><span class="header-section-number">2.2</span> Read and Examine the Data</a></li>
+  </ul></li>
+  <li><a href="#part-a-principal-components-analysis-with-prcomp" id="toc-part-a-principal-components-analysis-with-prcomp" class="nav-link" data-scroll-target="#part-a-principal-components-analysis-with-prcomp"><span class="header-section-number">3</span> Part A: Principal Components Analysis with <code>prcomp()</code></a></li>
+  <li><a href="#part-b-biplot-and-proportion-of-variance-explained-pve" id="toc-part-b-biplot-and-proportion-of-variance-explained-pve" class="nav-link" data-scroll-target="#part-b-biplot-and-proportion-of-variance-explained-pve"><span class="header-section-number">4</span> Part B: Biplot and Proportion of Variance Explained (PVE)</a>
+  <ul class="collapse">
+  <li><a href="#biplots-of-the-first-two-principal-components" id="toc-biplots-of-the-first-two-principal-components" class="nav-link" data-scroll-target="#biplots-of-the-first-two-principal-components"><span class="header-section-number">4.1</span> Biplots of the First Two Principal Components</a></li>
+  <li><a href="#computing-the-proportion-of-variance-explained" id="toc-computing-the-proportion-of-variance-explained" class="nav-link" data-scroll-target="#computing-the-proportion-of-variance-explained"><span class="header-section-number">4.2</span> Computing the Proportion of Variance Explained</a></li>
+  </ul></li>
+  <li><a href="#interpretation-of-the-biplot" id="toc-interpretation-of-the-biplot" class="nav-link" data-scroll-target="#interpretation-of-the-biplot"><span class="header-section-number">5</span> Interpretation of the Biplot</a>
+  <ul class="collapse">
+  <li><a href="#relationships-among-variables" id="toc-relationships-among-variables" class="nav-link" data-scroll-target="#relationships-among-variables"><span class="header-section-number">5.0.1</span> Relationships Among Variables</a></li>
+  </ul></li>
+  <li><a href="#full-code-listing" id="toc-full-code-listing" class="nav-link" data-scroll-target="#full-code-listing"><span class="header-section-number">6</span> Full Code Listing</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion"><span class="header-section-number">7</span> Conclusion</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Credit Applicant Analysis Using Principal Component Analysis (PCA)</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Erin Weiss </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
+<p>This case study analyzes the <strong>CreditShort</strong> data, which contains records for 400 applicants in terms of <strong>Income</strong>, <strong>Limit</strong>, <strong>Rating</strong>, <strong>Cards</strong>, <strong>Age</strong>, and <strong>Education</strong>.</p>
+<p>My goals are to:</p>
+<ul>
+<li>Perform principal components analysis (PCA) using the <code>prcomp()</code> function</li>
+<li>Interpret the principal component loading vectors</li>
+<li>Visualize the first two principal components using a biplot</li>
+<li>Compute and interpret the proportion of variance explained (PVE) by each component</li>
+</ul>
+</section>
+<section id="setup" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Setup</h1>
+<section id="load-libraries" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="load-libraries"><span class="header-section-number">2.1</span> Load Libraries</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(factoextra)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(cluster)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="read-and-examine-the-data" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="read-and-examine-the-data"><span class="header-section-number">2.2</span> Read and Examine the Data</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>Credit <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"CreditShort.csv"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(Credit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["Income"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["Limit"],"name":[2],"type":["int"],"align":["right"]},{"label":["Rating"],"name":[3],"type":["int"],"align":["right"]},{"label":["Cards"],"name":[4],"type":["int"],"align":["right"]},{"label":["Age"],"name":[5],"type":["int"],"align":["right"]},{"label":["Education"],"name":[6],"type":["int"],"align":["right"]}],"data":[{"1":"14.891","2":"3606","3":"283","4":"2","5":"34","6":"11","_rn_":"1"},{"1":"106.025","2":"6645","3":"483","4":"3","5":"82","6":"15","_rn_":"2"},{"1":"104.593","2":"7075","3":"514","4":"4","5":"71","6":"11","_rn_":"3"},{"1":"148.924","2":"9504","3":"681","4":"3","5":"36","6":"11","_rn_":"4"},{"1":"55.882","2":"4897","3":"357","4":"2","5":"68","6":"16","_rn_":"5"},{"1":"80.180","2":"8047","3":"569","4":"4","5":"77","6":"10","_rn_":"6"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(Credit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     Income           Limit           Rating          Cards      
+ Min.   : 10.35   Min.   :  855   Min.   : 93.0   Min.   :1.000  
+ 1st Qu.: 21.01   1st Qu.: 3088   1st Qu.:247.2   1st Qu.:2.000  
+ Median : 33.12   Median : 4622   Median :344.0   Median :3.000  
+ Mean   : 45.22   Mean   : 4736   Mean   :354.9   Mean   :2.958  
+ 3rd Qu.: 57.47   3rd Qu.: 5873   3rd Qu.:437.2   3rd Qu.:4.000  
+ Max.   :186.63   Max.   :13913   Max.   :982.0   Max.   :9.000  
+      Age          Education    
+ Min.   :23.00   Min.   : 5.00  
+ 1st Qu.:41.75   1st Qu.:11.00  
+ Median :56.00   Median :14.00  
+ Mean   :55.67   Mean   :13.45  
+ 3rd Qu.:70.00   3rd Qu.:16.00  
+ Max.   :98.00   Max.   :20.00  </code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="part-a-principal-components-analysis-with-prcomp" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Part A: Principal Components Analysis with <code>prcomp()</code></h1>
+<p>In this section, I perform principal components analysis using the <code>prcomp()</code> function and scale the variables by setting <code>scale = TRUE</code> so that each has standard deviation one. This ensures that all variables contribute equally to the analysis rather than allowing variables with larger scales to dominate the principal components. If I did not scale the data, differences in variance between variables could be unbalanced, and the visualization of the data would be difficult to interpret.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform PCA with scaling</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>pr.out <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(Credit, <span class="at">scale =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Principal component loading vectors</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>pr.out<span class="sc">$</span>rotation</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                  PC1         PC2          PC3         PC4          PC5
+Income     0.54282939 -0.04541949 -0.005415861  0.04337233 -0.837471424
+Limit      0.58681668 -0.05070614  0.077252820 -0.06628280  0.380954388
+Rating     0.58714608 -0.01587287  0.071176933 -0.09066882  0.374496404
+Cards      0.01939936  0.74516159 -0.188347920 -0.63594008 -0.059479426
+Age        0.12305992  0.26795881 -0.782053195  0.54017677  0.098265660
+Education -0.02686689 -0.60666819 -0.584683141 -0.53786045 -0.008594761
+                    PC6
+Income    -0.0021083866
+Limit     -0.7053987613
+Rating     0.7081475715
+Cards     -0.0304194827
+Age       -0.0002254813
+Education  0.0031246539</code></pre>
+</div>
+</div>
+<p>The output above shows the <strong>principal component loading vectors</strong>. Each column of <code>pr.out$rotation</code> corresponds to a principal component, and each row corresponds to a variable (Income, Limit, Rating, Cards, Age, Education). The values show how strongly each variable contributes to each component. In PCA, the principal components capture the maximum variance in the data while simultaneously minimizing the approximation error, or the differences between the original data and the data defined by the principal component.</p>
+</section>
+<section id="part-b-biplot-and-proportion-of-variance-explained-pve" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Part B: Biplot and Proportion of Variance Explained (PVE)</h1>
+<p>In this section, I:</p>
+<ol type="1">
+<li>Create biplots of the first and second principal components</li>
+<li>Interpret the biplot</li>
+<li>Use the <code>sdev</code> output of <code>prcomp()</code> to compute the proportion of variance explained (PVE) by each principal component</li>
+</ol>
+<section id="biplots-of-the-first-two-principal-components" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="biplots-of-the-first-two-principal-components"><span class="header-section-number">4.1</span> Biplots of the First Two Principal Components</h2>
+<p>I plotted the first and second principal components using the <code>biplot()</code> function, adding optional arguments to customize the plot for better visualization.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># First biplot</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">biplot</span>(pr.out, </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">col   =</span> <span class="fu">c</span>(<span class="st">"lightgrey"</span>, <span class="st">"red"</span>),</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">scale =</span> <span class="dv">0</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">expand =</span> <span class="dv">2</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">ylim  =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">7</span>),</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">cex   =</span> <span class="fu">c</span>(.<span class="dv">9</span>, .<span class="dv">7</span>))</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">h =</span> <span class="dv">0</span>, <span class="at">col =</span> <span class="st">"green"</span>, <span class="at">lty =</span> <span class="dv">10</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> <span class="dv">0</span>, <span class="at">col =</span> <span class="st">"green"</span>, <span class="at">lty =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="credit_pca_case_study_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="1152"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Second biplot with simplified observation labels</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">biplot</span>(pr.out, </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">col   =</span> <span class="fu">c</span>(<span class="st">"darkblue"</span>, <span class="st">"red"</span>),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">scale =</span> <span class="dv">0</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">xlabs =</span> <span class="fu">rep</span>(<span class="st">"*"</span>, <span class="dv">400</span>),</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">expand =</span> <span class="dv">2</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">ylim  =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">7</span>),</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">cex   =</span> <span class="fu">c</span>(.<span class="dv">9</span>, .<span class="dv">7</span>))</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">h =</span> <span class="dv">0</span>, <span class="at">col =</span> <span class="st">"green"</span>, <span class="at">lty =</span> <span class="dv">10</span>)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> <span class="dv">0</span>, <span class="at">col =</span> <span class="st">"green"</span>, <span class="at">lty =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="credit_pca_case_study_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="1152"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="computing-the-proportion-of-variance-explained" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="computing-the-proportion-of-variance-explained"><span class="header-section-number">4.2</span> Computing the Proportion of Variance Explained</h2>
+<p>To determine the <strong>proportion of variance explained (PVE)</strong> by each principal component, I:</p>
+<ol type="1">
+<li>Used the <code>sdev</code> output of <code>prcomp()</code> (the standard deviation of each principal component).</li>
+<li>Squared these values to obtain the <strong>variance</strong> explained by each component and stored them in <code>pr.var</code>.</li>
+<li>Computed the PVE using<br>
+<span class="math inline">\(\text{PVE} = \frac{\text{variance of PC}_j}{\sum_k \text{variance of all PCs}}\)</span> by calculating <code>pr.var / sum(pr.var)</code> and storing the result in <code>pve</code>.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Variance of each principal component</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>pr.var <span class="ot">&lt;-</span> pr.out<span class="sc">$</span>sdev<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Proportion of variance explained</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>pve <span class="ot">&lt;-</span> pr.var <span class="sc">/</span> <span class="fu">sum</span>(pr.var)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>pve</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.4587877863 0.1760529143 0.1658180712 0.1550361054 0.0439416437
+[6] 0.0003634791</code></pre>
+</div>
+</div>
+<p>To make the interpretation easier, I convert the PVE values into percentages:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>pve_percent <span class="ot">&lt;-</span> <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> pve, <span class="dv">2</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>pve_percent</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 45.88 17.61 16.58 15.50  4.39  0.04</code></pre>
+</div>
+</div>
+<p>The resulting percentages are:</p>
+<ul>
+<li>The first principal component explains approximately <strong>45.88%</strong> of the variance.</li>
+<li>The second principal component explains approximately <strong>17.61%</strong> of the variance.</li>
+<li>The third principal component explains approximately <strong>16.58%</strong> of the variance.</li>
+<li>The fourth principal component explains approximately <strong>15.5%</strong> of the variance.</li>
+<li>The fifth principal component explains approximately <strong>4.39%</strong> of the variance.</li>
+<li>The sixth principal component explains approximately <strong>0.04%</strong> of the variance.</li>
+</ul>
+<p>As expected in PCA, the <strong>first principal component</strong> explains the highest percentage of the variance.</p>
+</section>
+</section>
+<section id="interpretation-of-the-biplot" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Interpretation of the Biplot</h1>
+<p>The left and bottom axes of the biplot represent the <strong>principal component 1 (PC1)</strong> and <strong>principal component 2 (PC2)</strong> scores for each observation (applicant). The top and right axes represent the positions of the <strong>variable vectors</strong> with respect to the origin. These are used to see how strongly each characteristic (Income, Limit, Rating, Cards, Age, Education) influences the principal components.</p>
+<p>The key ideas to help interpret this plot are:</p>
+<ul>
+<li>The <strong>vectors</strong> represent the variables in the dataset. They point outward from the origin as the values they represent increase.</li>
+<li>Each vector points toward the principal component axis that it influences the most.</li>
+<li>Points that are close to a certain vector are highly associated with the variable that the vector represents. They explain higher levels of variability in the data for that variable.
+<ul>
+<li>For example, applicant 361 is close to the point of the vector representing age. Applicant 361’s age is 82, a higher-than-average age for applicants.</li>
+</ul></li>
+<li>Points that are closer together share similar data patterns for the variables in the dataset.</li>
+<li>When vectors are close together and form <strong>small angles</strong>, the variables they represent are <strong>positively correlated</strong>: when one increases in value, the other also tends to increase.</li>
+<li>When vectors form <strong>large angles (beyond 90 degrees)</strong>, the variables they represent are <strong>negatively correlated</strong>: when one increases in value, the other tends to decrease.</li>
+<li>The farther from the origin a vector extends, the more influence that variable has on the principal component to which it extends and the more impact it has on explaining variability in the data.</li>
+</ul>
+<section id="relationships-among-variables" class="level3" data-number="5.0.1">
+<h3 data-number="5.0.1" class="anchored" data-anchor-id="relationships-among-variables"><span class="header-section-number">5.0.1</span> Relationships Among Variables</h3>
+<p>In this biplot:</p>
+<ul>
+<li>The vectors representing <strong>Rating</strong>, <strong>Income</strong>, and <strong>Limit</strong> are <strong>positively correlated</strong> because the angles between them are small. For example, this means that when a customer’s credit rating is high, their income and credit limit are also more likely to be high, illustrating how these variables trend together.</li>
+<li><strong>Education</strong> and <strong>Cards</strong> are <strong>negatively correlated</strong> because the two arrows form an angle close to 180 degrees. This means the variables move in opposite directions—customers with more years of education tend to have fewer credit cards, while those with less education tend to have more.</li>
+</ul>
+<p>I see that the <strong>first loading vector (PC1)</strong> places similar weight on Rating, Income, and Limit. This component corresponds primarily to these three variables that describe financial capacity or personal financial behavior.</p>
+<p>The <strong>second loading vector (PC2)</strong> places most of its weight on <strong>Cards</strong>, corresponding to the number of cards the applicant has. It also places some weight on <strong>Age</strong>, while it places less emphasis on Rating, Income, and Limit. Education plays a minimal role (is less correlated) in this component.</p>
+<p>In this plot, more variance occurs in relation to <strong>Rating</strong>, <strong>Income</strong>, and <strong>Limit</strong>, which aligns with the fact that these variables have strong loadings on PC1.</p>
+</section>
+</section>
+<section id="full-code-listing" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Full Code Listing</h1>
+<p>Below is a consolidated version of the core R code used in this analysis.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load Libraries</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(factoextra)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(cluster)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Read Data</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>Credit <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"CreditShort.csv"</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Inspect Data</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(Credit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["Income"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["Limit"],"name":[2],"type":["int"],"align":["right"]},{"label":["Rating"],"name":[3],"type":["int"],"align":["right"]},{"label":["Cards"],"name":[4],"type":["int"],"align":["right"]},{"label":["Age"],"name":[5],"type":["int"],"align":["right"]},{"label":["Education"],"name":[6],"type":["int"],"align":["right"]}],"data":[{"1":"14.891","2":"3606","3":"283","4":"2","5":"34","6":"11","_rn_":"1"},{"1":"106.025","2":"6645","3":"483","4":"3","5":"82","6":"15","_rn_":"2"},{"1":"104.593","2":"7075","3":"514","4":"4","5":"71","6":"11","_rn_":"3"},{"1":"148.924","2":"9504","3":"681","4":"3","5":"36","6":"11","_rn_":"4"},{"1":"55.882","2":"4897","3":"357","4":"2","5":"68","6":"16","_rn_":"5"},{"1":"80.180","2":"8047","3":"569","4":"4","5":"77","6":"10","_rn_":"6"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(Credit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     Income           Limit           Rating          Cards      
+ Min.   : 10.35   Min.   :  855   Min.   : 93.0   Min.   :1.000  
+ 1st Qu.: 21.01   1st Qu.: 3088   1st Qu.:247.2   1st Qu.:2.000  
+ Median : 33.12   Median : 4622   Median :344.0   Median :3.000  
+ Mean   : 45.22   Mean   : 4736   Mean   :354.9   Mean   :2.958  
+ 3rd Qu.: 57.47   3rd Qu.: 5873   3rd Qu.:437.2   3rd Qu.:4.000  
+ Max.   :186.63   Max.   :13913   Max.   :982.0   Max.   :9.000  
+      Age          Education    
+ Min.   :23.00   Min.   : 5.00  
+ 1st Qu.:41.75   1st Qu.:11.00  
+ Median :56.00   Median :14.00  
+ Mean   :55.67   Mean   :13.45  
+ 3rd Qu.:70.00   3rd Qu.:16.00  
+ Max.   :98.00   Max.   :20.00  </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform PCA with scaling</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>pr.out <span class="ot">&lt;-</span> <span class="fu">prcomp</span>(Credit, <span class="at">scale =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Principal component loading vectors</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>pr.out<span class="sc">$</span>rotation</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                  PC1         PC2          PC3         PC4          PC5
+Income     0.54282939 -0.04541949 -0.005415861  0.04337233 -0.837471424
+Limit      0.58681668 -0.05070614  0.077252820 -0.06628280  0.380954388
+Rating     0.58714608 -0.01587287  0.071176933 -0.09066882  0.374496404
+Cards      0.01939936  0.74516159 -0.188347920 -0.63594008 -0.059479426
+Age        0.12305992  0.26795881 -0.782053195  0.54017677  0.098265660
+Education -0.02686689 -0.60666819 -0.584683141 -0.53786045 -0.008594761
+                    PC6
+Income    -0.0021083866
+Limit     -0.7053987613
+Rating     0.7081475715
+Cards     -0.0304194827
+Age       -0.0002254813
+Education  0.0031246539</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Variance of each principal component</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>pr.var <span class="ot">&lt;-</span> pr.out<span class="sc">$</span>sdev<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Proportion of variance explained</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>pve <span class="ot">&lt;-</span> pr.var <span class="sc">/</span> <span class="fu">sum</span>(pr.var)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>pve</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.4587877863 0.1760529143 0.1658180712 0.1550361054 0.0439416437
+[6] 0.0003634791</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Biplots</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">biplot</span>(pr.out, </span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">col   =</span> <span class="fu">c</span>(<span class="st">"lightgrey"</span>, <span class="st">"red"</span>),</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">scale =</span> <span class="dv">0</span>,</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">expand =</span> <span class="dv">2</span>,</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">ylim  =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">7</span>),</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">cex   =</span> <span class="fu">c</span>(.<span class="dv">9</span>, .<span class="dv">7</span>))</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">h =</span> <span class="dv">0</span>, <span class="at">col =</span> <span class="st">"green"</span>, <span class="at">lty =</span> <span class="dv">10</span>)</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> <span class="dv">0</span>, <span class="at">col =</span> <span class="st">"green"</span>, <span class="at">lty =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="credit_pca_case_study_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="1152"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">biplot</span>(pr.out, </span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">col   =</span> <span class="fu">c</span>(<span class="st">"darkblue"</span>, <span class="st">"red"</span>),</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">scale =</span> <span class="dv">0</span>,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">xlabs =</span> <span class="fu">rep</span>(<span class="st">"*"</span>, <span class="dv">400</span>),</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">expand =</span> <span class="dv">2</span>,</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">ylim  =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">5</span>, <span class="dv">7</span>),</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">cex   =</span> <span class="fu">c</span>(.<span class="dv">9</span>, .<span class="dv">7</span>))</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">h =</span> <span class="dv">0</span>, <span class="at">col =</span> <span class="st">"green"</span>, <span class="at">lty =</span> <span class="dv">10</span>)</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> <span class="dv">0</span>, <span class="at">col =</span> <span class="st">"green"</span>, <span class="at">lty =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="credit_pca_case_study_files/figure-html/unnamed-chunk-8-2.png" class="img-fluid figure-img" width="1152"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="conclusion" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> Conclusion</h1>
+<p>Through this principal components analysis of the CreditShort dataset, I found that:</p>
+<ul>
+<li>The first principal component captures a large portion of the variation (about 45.88%) and is driven primarily by <strong>Income</strong>, <strong>Limit</strong>, and <strong>Rating</strong>.</li>
+<li>The second principal component (about 17.61% of the variance) is driven largely by <strong>Cards</strong> and <strong>Age</strong>, and is negatively associated with <strong>Education</strong>.</li>
+<li>Together, the first two components explain over <strong>63%</strong> of the total variance, providing a useful low-dimensional summary of the data.</li>
+</ul>
+<p>These findings highlight how PCA can be used to uncover the main axes of variation in applicant financial and demographic characteristics, and how these axes can support interpretation, visualization, and potential downstream modeling or segmentation. Even in this simple example, PCA shows its usefulness as a tool for transforming high-dimensional data into a more compact form, making it easier to spot relationships, interpret drivers of variation, and build more efficient models.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
