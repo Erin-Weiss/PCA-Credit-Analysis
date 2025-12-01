@@ -54,5 +54,3 @@ Key steps included:
 - **GitHub Repository:** [View Source Code](https://github.com/Erin-Weiss/PCA-Credit-Analysis)
 - **Portfolio Page:** [View on Portfolio](https://erin-weiss.github.io/articles/credit-pca.html)
 
----
-
