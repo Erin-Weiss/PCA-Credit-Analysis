@@ -1,7 +1,7 @@
 # Credit Applicant Analysis Using Principal Component Analysis (PCA)
 
 **Author:** Erin Weiss
-[Portfolio](https://erin-weiss.github.io/index.html) | [LinkedIn](https://www.linkedin.com/in/erinweiss3/) | [GitHub](https://github.com/Erin-Weiss)
+[Portfolio](https://erin-weiss.github.io/index.html) | [LinkedIn](https://www.linkedin.com/in/erinweiss3/) | [GitHub](https://github.com/Erin-Weiss/PCA-Credit-Analysis)
 
 [View the Full Interactive Report](https://erin-weiss.github.io/articles/credit-pca.html) | [Live GitHub Page](https://erin-weiss.github.io/PCA-Credit-Analysis/)
 
@@ -47,6 +47,16 @@ Identify the primary drivers of variance among 400 credit applicants by applying
 - PC2 captures a "demographic/behavioral" axis — Cards and Age load positively, while Education loads negatively, indicating an inverse relationship between education level and number of cards held.
 - The first two components retain over 63% of total variance, providing a meaningful two-dimensional summary of the original six-feature space.
 - Biplot analysis confirms clear separation between financial capacity variables and demographic variables, supporting the interpretability of the reduced representation.
+
+---
+
+## Business Value
+
+The separation of applicants along a "financial capacity" axis and a "demographic/behavioral" axis has direct applications in the financial services industry. Banks and fintech companies can leverage these principal components to segment customers into actionable groups — routing high-capacity applicants toward premium credit products while offering credit-building tools to others, improving conversion rates and reducing marketing spend on mismatched offers.
+
+From a modeling perspective, the strong correlation among Income, Limit, and Rating means that feeding all three into a downstream credit risk model introduces redundancy that can degrade performance and slow training. PCA-derived components are uncorrelated by construction, producing cleaner inputs for models like logistic regression or gradient boosting and improving both stability and interpretability in production scoring pipelines.
+
+At scale, these benefits compound. When organizations manage hundreds of applicant features across millions of records, PCA identifies which dimensions carry meaningful signal and which are noise. This reduces compute costs, accelerates model training cycles, and helps data teams focus resources on the variables that drive business outcomes rather than maintaining redundant feature sets.
 
 ---
 
