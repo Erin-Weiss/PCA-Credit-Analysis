@@ -43,8 +43,8 @@ Identify the primary drivers of variance among 400 credit applicants by applying
 
 **Key findings:**
 
-- PC1 captures a "financial capacity" axis — Income, Credit Limit, and Rating load heavily and positively, forming a tightly correlated cluster.
-- PC2 captures a "demographic/behavioral" axis — Cards and Age load positively, while Education loads negatively, indicating an inverse relationship between education level and number of cards held.
+- PC1 captures a "financial capacity" axis: Income, Credit Limit, and Rating load heavily and positively, forming a tightly correlated cluster.
+- PC2 captures a "demographic/behavioral" axis: Cards and Age load positively, while Education loads negatively, indicating an inverse relationship between education level and number of cards held.
 - The first two components retain over 63% of total variance, providing a meaningful two-dimensional summary of the original six-feature space.
 - Biplot analysis confirms clear separation between financial capacity variables and demographic variables, supporting the interpretability of the reduced representation.
 
@@ -52,7 +52,7 @@ Identify the primary drivers of variance among 400 credit applicants by applying
 
 ## Business Value
 
-The separation of applicants along a "financial capacity" axis and a "demographic/behavioral" axis has direct applications in the financial services industry. Banks and fintech companies can leverage these principal components to segment customers into actionable groups — routing high-capacity applicants toward premium credit products while offering credit-building tools to others, improving conversion rates and reducing marketing spend on mismatched offers.
+The separation of applicants along a "financial capacity" axis and a "demographic/behavioral" axis has direct applications in the financial services industry. Banks and fintech companies can leverage these principal components to segment customers into actionable groups, routing high-capacity applicants toward premium credit products while offering credit-building tools to others, improving conversion rates and reducing marketing spend on mismatched offers.
 
 From a modeling perspective, the strong correlation among Income, Limit, and Rating means that feeding all three into a downstream credit risk model introduces redundancy that can degrade performance and slow training. PCA-derived components are uncorrelated by construction, producing cleaner inputs for models like logistic regression or gradient boosting and improving both stability and interpretability in production scoring pipelines.
 
